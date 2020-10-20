@@ -1,205 +1,214 @@
 package com.github.jfasttext;
 
-import org.bytedeco.javacpp.PointerPointer;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bytedeco.javacpp.PointerPointer;
+
 public class JFastText {
 
-    private FastTextWrapper.FastTextApi fta;
+	public static class ProbLabel {
+		public String label;
+		public float logProb;
 
-    public JFastText() {
-        fta = new FastTextWrapper.FastTextApi();
-    }
+		public ProbLabel(float logProb, String label) {
+			this.logProb = logProb;
+			this.label = label;
+		}
 
-    public void runCmd(String[] args) {
-        // Prepend "fasttext" to the argument list so that it is compatible with C++'s main()
-        String[] cArgs = new String[args.length + 1];
-        cArgs[0] = "fasttext";
-        System.arraycopy(args, 0, cArgs, 1, args.length);
-        fta.runCmd(cArgs.length, new PointerPointer(cArgs));
-    }
+		@Override
+		public String toString() {
+			return String.format("logProb = %f, label = %s", this.logProb, this.label);
+		}
+	}
 
-    public void loadModel(String modelFile) {
-        if (!new File(modelFile).exists()) {
-            throw new IllegalArgumentException("Model file doesn't exist!");
-        }
-        if (!fta.checkModel(modelFile)) {
-            throw new IllegalArgumentException(
-                    "Model file's format is not compatible with this JFastText version!");
-        }
-        fta.loadModel(modelFile);
-    }
+	public static void main(String[] args) {
+		JFastText jft = new JFastText();
+		jft.runCmd(args);
+	}
 
-    public void unloadModel() {
-        fta.unloadModel();
-    }
+	private static List<String> stringVec2Strings(FastTextWrapper.StringVector sv) {
+		List<String> strings = new ArrayList<>();
+		for (int i = 0; i < sv.size(); i++) {
+			strings.add(sv	.get(i)
+							.getString());
+		}
+		return strings;
+	}
 
-    public void test(String testFile) {
-        test(testFile, 1);
-    }
+	private FastTextWrapper.FastTextApi fta;
 
-    public void test(String testFile, int k) {
-        if (k <= 0) {
-            throw new IllegalArgumentException("k must be positive");
-        }
-        fta.test(testFile, k);
-    }
+	public JFastText() {
+		this.fta = new FastTextWrapper.FastTextApi();
+	}
 
-    public String predict(String text){
-        List<String> predictions = predict(text, 1);
-        return predictions.size() > 0? predictions.get(0): null;
-    }
+	public int getBucket() {
+		return this.fta.getBucket();
+	}
 
-    public List<String> predict(String text, int k) {
-        if (k <= 0) {
-            throw new IllegalArgumentException("k must be positive");
-        }
-        FastTextWrapper.StringVector sv = fta.predict(text, k);
-        List<String> predictions = new ArrayList<>();
-        for (int i = 0; i < sv.size(); i++) {
-            predictions.add(sv.get(i).getString());
-        }
-        return predictions;
-    }
+	public int getContextWindowSize() {
+		return this.fta.getContextWindowSize();
+	}
 
-    public ProbLabel predictProba(String text){
-        List<ProbLabel> probaPredictions = predictProba(text, 1);
-        return probaPredictions.size() > 0? probaPredictions.get(0): null;
-    }
+	public int getDim() {
+		return this.fta.getDim();
+	}
 
-    public List<ProbLabel> predictProba(String text, int k) {
-        if (k <= 0) {
-            throw new IllegalArgumentException("k must be positive");
-        }
-        FastTextWrapper.FloatStringPairVector fspv = fta.predictProba(text, k);
-        List<ProbLabel> probaPredictions = new ArrayList<>();
-        for (int i = 0; i < fspv.size(); i++) {
-            float logProb = fspv.first(i);
-            String label = fspv.second(i).getString();
-            probaPredictions.add(new ProbLabel(logProb, label));
-        }
-        return probaPredictions;
-    }
+	public int getEpoch() {
+		return this.fta.getEpoch();
+	}
 
-    public List<Float> getVector(String word) {
-        FastTextWrapper.RealVector rv = fta.getVector(word);
-        List<Float> wordVec = new ArrayList<>();
-        for (int i = 0; i < rv.size(); i++) {
-            wordVec.add(rv.get(i));
-        }
-        return wordVec;
-    }
+	public String getLabelPrefix() {
+		return this.fta	.getLabelPrefix()
+						.getString();
+	}
 
-    public int getNWords() {
-        return fta.getNWords();
-    }
+	public List<String> getLabels() {
+		return JFastText.stringVec2Strings(this.fta.getWords());
+	}
 
-    public List<String> getWords() {
-        return stringVec2Strings(fta.getWords());
-    }
+	public String getLossName() {
+		return this.fta	.getLossName()
+						.getString();
+	}
 
-    public int getNLabels() {
-        return fta.getNLabels();
-    }
+	public double getLr() {
+		return this.fta.getLr();
+	}
 
-    public List<String> getLabels() {
-        return stringVec2Strings(fta.getWords());
-    }
+	public int getLrUpdateRate() {
+		return this.fta.getLrUpdateRate();
+	}
 
-    public double getLr() {
-        return fta.getLr();
-    }
+	public int getMaxn() {
+		return this.fta.getMaxn();
+	}
 
-    public int getLrUpdateRate() {
-        return fta.getLrUpdateRate();
-    }
+	public int getMinCount() {
+		return this.fta.getMinCount();
+	}
 
-    public int getDim() {
-        return fta.getDim();
-    }
+	public int getMinCountLabel() {
+		return this.fta.getMinCountLabel();
+	}
 
-    public int getContextWindowSize() {
-        return fta.getContextWindowSize();
-    }
+	public int getMinn() {
+		return this.fta.getMinn();
+	}
 
-    public int getEpoch() {
-        return fta.getEpoch();
-    }
+	public String getModelName() {
+		return this.fta	.getModelName()
+						.getString();
+	}
 
-    public int getMinCount() {
-        return fta.getMinCount();
-    }
+	public int getNLabels() {
+		return this.fta.getNLabels();
+	}
 
-    public int getMinCountLabel() {
-        return fta.getMinCountLabel();
-    }
+	public int getNSampledNegatives() {
+		return this.fta.getNSampledNegatives();
+	}
 
-    public int getNSampledNegatives() {
-        return fta.getNSampledNegatives();
-    }
+	public int getNWords() {
+		return this.fta.getNWords();
+	}
 
-    public int getWordNgrams() {
-        return fta.getWordNgrams();
-    }
+	public String getPretrainedVectorsFileName() {
+		return this.fta	.getPretrainedVectorsFileName()
+						.getString();
+	}
 
-    public String getLossName() {
-        return fta.getLossName().getString();
-    }
+	public double getSamplingThreshold() {
+		return this.fta.getSamplingThreshold();
+	}
 
-    public String getModelName() {
-        return fta.getModelName().getString();
-    }
+	public List<Float> getVector(String word) {
+		FastTextWrapper.RealVector rv = this.fta.getVector(word);
+		List<Float> wordVec = new ArrayList<>();
+		for (int i = 0; i < rv.size(); i++) {
+			wordVec.add(rv.get(i));
+		}
+		return wordVec;
+	}
 
-    public int getBucket() {
-        return fta.getBucket();
-    }
+	public int getWordNgrams() {
+		return this.fta.getWordNgrams();
+	}
 
-    public int getMinn() {
-        return fta.getMinn();
-    }
+	public List<String> getWords() {
+		return JFastText.stringVec2Strings(this.fta.getWords());
+	}
 
-    public int getMaxn() {
-        return fta.getMaxn();
-    }
+	public void loadModel(String modelFile) {
+		if (!new File(modelFile).exists()) {
+			throw new IllegalArgumentException("Model file doesn't exist!");
+		}
+		if (!this.fta.checkModel(modelFile)) {
+			throw new IllegalArgumentException("Model file's format is not compatible with this JFastText version!");
+		}
+		this.fta.loadModel(modelFile);
+	}
 
-    public double getSamplingThreshold() {
-        return fta.getSamplingThreshold();
-    }
+	public String predict(String text) {
+		List<String> predictions = this.predict(text, 1);
+		return predictions.size() > 0 ? predictions.get(0) : null;
+	}
 
-    public String getLabelPrefix() {
-        return fta.getLabelPrefix().getString();
-    }
+	public List<String> predict(String text, int k) {
+		if (k <= 0) {
+			throw new IllegalArgumentException("k must be positive");
+		}
+		FastTextWrapper.StringVector sv = this.fta.predict(text, k);
+		List<String> predictions = new ArrayList<>();
+		for (int i = 0; i < sv.size(); i++) {
+			predictions.add(sv	.get(i)
+								.getString());
+		}
+		return predictions;
+	}
 
-    public String getPretrainedVectorsFileName() {
-        return fta.getPretrainedVectorsFileName().getString();
-    }
+	public ProbLabel predictProba(String text) {
+		List<ProbLabel> probaPredictions = this.predictProba(text, 1);
+		return probaPredictions.size() > 0 ? probaPredictions.get(0) : null;
+	}
 
-    private static List<String> stringVec2Strings(FastTextWrapper.StringVector sv) {
-        List<String> strings = new ArrayList<>();
-        for (int i = 0; i < sv.size(); i++) {
-            strings.add(sv.get(i).getString());
-        }
-        return strings;
-    }
+	public List<ProbLabel> predictProba(String text, int k) {
+		if (k <= 0) {
+			throw new IllegalArgumentException("k must be positive");
+		}
+		FastTextWrapper.FloatStringPairVector fspv = this.fta.predictProba(text, k);
+		List<ProbLabel> probaPredictions = new ArrayList<>();
+		for (int i = 0; i < fspv.size(); i++) {
+			float logProb = fspv.first(i);
+			String label = fspv	.second(i)
+								.getString();
+			probaPredictions.add(new ProbLabel(logProb, label));
+		}
+		return probaPredictions;
+	}
 
-    public static class ProbLabel {
-        public float logProb;
-        public String label;
-        public ProbLabel(float logProb, String label) {
-            this.logProb = logProb;
-            this.label = label;
-        }
-        @Override
-        public String toString() {
-            return String.format("logProb = %f, label = %s", logProb, label);
-        }
-    }
+	@SuppressWarnings("rawtypes")
+	public void runCmd(String[] args) {
+		// Prepend "fasttext" to the argument list so that it is compatible with C++'s main()
+		String[] cArgs = new String[args.length + 1];
+		cArgs[0] = "fasttext";
+		System.arraycopy(args, 0, cArgs, 1, args.length);
+		this.fta.runCmd(cArgs.length, new PointerPointer(cArgs));
+	}
 
-    public static void main(String[] args) {
-        JFastText jft = new JFastText();
-        jft.runCmd(args);
-    }
+	public void test(String testFile) {
+		this.test(testFile, 1);
+	}
+
+	public void test(String testFile, int k) {
+		if (k <= 0) {
+			throw new IllegalArgumentException("k must be positive");
+		}
+		this.fta.test(testFile, k);
+	}
+
+	public void unloadModel() {
+		this.fta.unloadModel();
+	}
 }
